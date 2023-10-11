@@ -84,9 +84,6 @@ pygame.font.init()
 
 # Initialize the font here
 font = pygame.font.Font(None, 12)  #36 You can adjust the font size as needed
-
-
-
 # Set the screen dimensions to match your touchscreen resolution
 screen = pygame.display.set_mode((0, 0), pygame.FULLSCREEN)  # Full-screen mode
 #screen = pygame.display.set_mode((800, 480)) # 800X480
@@ -125,6 +122,8 @@ bg = (204, 102, 0)
 
 #-----------------------------------------------------------------------------------
 def search_net():
+
+    screen.fill(white)
     # Create a StringIO object to capture the printed output
     string_buffer = StringIO()
     # Redirect the standard output to the StringIO object
@@ -155,7 +154,7 @@ def search_net():
                 if mac_match:
                     mac_address = mac_match.group(1)
                     device_name = mac_match.group(2)
-                    print(f"IP:{current_ip}, MAC:{mac_address},Name:{device_name}")
+                    print(f"IP:{current_ip}     MAC:{mac_address}     Name:{device_name}")
                     
                     
     # Get the contents of the StringIO object as a string
@@ -165,36 +164,21 @@ def search_net():
     # Reset the standard output
     sys.stdout = sys.__stdout__
     print(output_string)
-    display_formatted_text(output_string,0,0,800,480)
+    display_formatted_text(output_string,10,10,780,460)
     
 #----------------------------------------------------------------------------------------------
-
 #function for outputting text onto the screen
 def draw_text(text, font, text_col, x, y):
-    text_font = pygame.font.SysFont("Helvetica", 24)
+    text_font = pygame.font.SysFont("Helvetica", 18)
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
 
 # Function to display formatted text on the screen
-def display_formatted_text(text, x, y, width, height, font_size=24, line_spacing=5):
+def display_formatted_text(text, x, y, width, height, font_size=18, line_spacing=1):
     font = pygame.font.Font(None, font_size)
-    lines = []
-    remaining_text = text
+    lines = text.split("\n")  # Split the text into lines based on newline characters
 
     screen.fill(white)
-    while remaining_text:
-        line = ""
-        while len(remaining_text) > 0:
-            line_size = font.size(line + remaining_text[0])
-            if line_size[0] < width:  # Corrected this line
-                line += remaining_text[0]
-                remaining_text = remaining_text[1:]
-            else:
-                break
-        lines.append(line)
-
-    max_lines = height // (font_size + line_spacing)
-    lines = lines[:max_lines]  # Only display as many lines as fit on the screen
 
     y_offset = y
     for line in lines:
@@ -203,6 +187,7 @@ def display_formatted_text(text, x, y, width, height, font_size=24, line_spacing
         y_offset += font_size + line_spacing
 
     pygame.display.flip()
+
 
 #-----------------------------------------------------------------------------------
 class button():
@@ -462,11 +447,11 @@ def main():
                        
             if (OKto_search_net==True):
                 search_net()
-                OKto_search_net=False
-                for event in pygame.event.get():
-                    if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
+                #OKto_search_net=False
+                #for event in pygame.event.get():
+                    #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                     # Check if the touch event occurred
-                        touch_pos = pygame.mouse.get_pos()
+                        #touch_pos = pygame.mouse.get_pos()
 
         #draw_frequency_buttons(frequency_band)
         pygame.display.update()
