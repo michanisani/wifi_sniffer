@@ -21,6 +21,7 @@
 # Versions
 # 0.1 - 24 sep 2023
 # 0.2 - read device name on the net- using search_net()
+# 0.3 27-10-2023
 
 import os
 from io import StringIO
@@ -94,21 +95,12 @@ print(screen_width,screen_height)
 #pygame.mouse.set_visible(False)  # Hide the cursor
 
 #---global variable ------------------
-exit_label_X_pos = screen_width - 55 #735
-exit_label_Y_pos = screen_height - 476 #4
-table_label_X_pos = screen_width - 130 # 670
-table_label_Y_pos = screen_height - 476 # 4
-cell_width = screen_width // 6
-cell_height = screen_height // 19
-table_x = 0
-table_y = 10
+
 # Initial table size
 num_rows = 19
 num_cols = 5    
 temperature = ' '
 weather_description = ' '
-#define global variable
-clicked = False
 
 
 # Define colors
@@ -120,69 +112,141 @@ blue = (0,0,255)
 orange = (255,200,0)
 bg = (204, 102, 0)
 
+
+# Initialize button positions
+exit_label_X_pos = screen_width - 55 #735
+exit_label_Y_pos = screen_height - 476 #4
+next_label_X_pos = screen_width - 130 # 670
+next_label_Y_pos = screen_height - 476 # 4
+cell_width = screen_width // 6
+cell_height = screen_height // 19
+table_x = 0
+table_y = 10
+
+cell_width_B = screen_width // 12
+cell_height_B = screen_height // 19
+
+exit_button = pygame.Rect(exit_label_X_pos, exit_label_Y_pos, cell_width_B, cell_height_B)
+next_button = pygame.Rect(next_label_X_pos, next_label_Y_pos, cell_width_B, cell_height_B)
+
+last_update_time_table = 0
+last_update_time_net = 0
+last_update_time_bar = 0
+
+Start_To_Scan = 1 # start scan
+Scan_Result_Plist=[]
+
 #-----------------------------------------------------------------------------------
 def search_net():
+    global Start_To_Scan
+    global Scan_Result_Plist
+    NO_OF_LINES_TO_PRINT = 15
 
-    screen.fill(white)
-    # Create a StringIO object to capture the printed output
-    string_buffer = StringIO()
-    # Redirect the standard output to the StringIO object
-    sys.stdout = string_buffer
+    if (Start_To_Scan == 1):
+        print("Start To Scan Net")
+        screen.fill(pygame.Color("black"))
+        #text_font = pygame.font.SysFont("Helvetica", 18)
+        text_font = pygame.font.Font(None, 18)
+        # Create a StringIO object to capture the printed output
+        string_buffer = StringIO()
+        # Redirect the standard output to the StringIO object
+        sys.stdout = string_buffer
 
-    # Define the nmap command with $(which nmap) to ensure it's in the PATH
-    nmap_command = ['sudo', '$(which nmap)', '-sn', '10.0.0.0/24']
-    # Run the nmap command using subprocess
-    nmap = subprocess.Popen(' '.join(nmap_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    # Wait for the process to finish and collect its output
-    output, error = nmap.communicate()
-    # Check for errors, if any
-    if nmap.returncode != 0:
-        print("An error occurred while running nmap:")
-        print(error.decode('utf-8'))
-    else:
-        # Process the output to extract and print IP addresses, MAC addresses, and device names
-        lines = output.decode('utf-8').splitlines()
-        current_ip = ""
-        for line in lines:
-            # Check if the line contains an IP address
-            ip_match = re.search(r'Nmap scan report for (\d+\.\d+\.\d+\.\d+)', line)
-            if ip_match:
-                current_ip = ip_match.group(1)
-            else:
-                # Use regular expressions to match and extract MAC addresses and device names
-                mac_match = re.search(r'MAC Address: ([0-9A-Fa-f:]+) \((.+)\)', line)
-                if mac_match:
-                    mac_address = mac_match.group(1)
-                    device_name = mac_match.group(2)
-                    print(f"IP:{current_ip}     MAC:{mac_address}     Name:{device_name}")
-                    
-                    
-    # Get the contents of the StringIO object as a string
-    output_string = string_buffer.getvalue()
-    # Close the StringIO object
-    string_buffer.close()
-    # Reset the standard output
-    sys.stdout = sys.__stdout__
-    print(output_string)
-    display_formatted_text(output_string,10,10,780,460)
+        # Define the nmap command with $(which nmap) to ensure it's in the PATH
+        nmap_command = ['sudo', '$(which nmap)', '-sn', '10.0.0.0/24']
+        # Run the nmap command using subprocess
+        nmap = subprocess.Popen(' '.join(nmap_command), shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        # Wait for the process to finish and collect its output
+        output, error = nmap.communicate()
+        # Check for errors, if any
+        if nmap.returncode != 0:
+            print("An error occurred while running nmap:")
+            print(error.decode('utf-8'))
+        else:
+            # Process the output to extract and print IP addresses, MAC addresses, and device names
+            lines = output.decode('utf-8').splitlines()
+            current_ip = ""
+            for line in lines:
+                # Check if the line contains an IP address
+                ip_match = re.search(r'Nmap scan report for (\d+\.\d+\.\d+\.\d+)', line)
+                if ip_match:
+                    current_ip = ip_match.group(1)
+                else:
+                    # Use regular expressions to match and extract MAC addresses and device names
+                    mac_match = re.search(r'MAC Address: ([0-9A-Fa-f:]+) \((.+)\)', line)
+                    if mac_match:
+                        mac_address = mac_match.group(1)
+                        device_name = mac_match.group(2)
+                        print(f"IP: {current_ip}     MAC: {mac_address}     Name:{device_name}")
+        # Get the contents of the StringIO object as a string
+        output_string = string_buffer.getvalue()
+        # Close the StringIO object
+        string_buffer.close()
+        # Reset the standard output
+        sys.stdout = sys.__stdout__
+        Scan_Result_Plist = output_string.splitlines()
+        Plist_len = len (Scan_Result_Plist)
+        print("Plist Len=", Plist_len)
+        
+    print_next_lines(Scan_Result_Plist, NO_OF_LINES_TO_PRINT)
+        
+        
+#-----------------------------------------------------------------------------------------------------------------
+'''
+# Example usage:
+lines = ["Line 1", "Line 2", "Line 3", "Line 4", "Line 5", "Line 6"]
+print_next_lines(lines, 2)  # Prints the first 2 lines
+print_next_lines(lines, 2)  # Prints the next 2 lines
+print_next_lines(lines, 3)  # Prints the remaining lines (3 and 4)
+print_next_lines(lines, 2)  # Prints "All lines have been printed."
+'''
+def print_next_lines(lines, A):
+    global Start_To_Scan
+    ltop=[]
     
+    if not isinstance(lines, list) or not all(isinstance(line, str) for line in lines) or not isinstance(A, int):
+        print("Invalid input. 'lines' should be a list of strings, and 'A' should be an integer.")
+        return
+    if A <= 0:
+        print("A should be a positive integer.")
+        return
+    if not hasattr(print_next_lines, 'current_index'):
+        print_next_lines.current_index = 0
+    current_index = print_next_lines.current_index
+    if current_index >= len(lines):
+        print("All lines have been printed.")
+        print_next_lines.current_index = 0
+        Start_To_Scan = 1 # start scan
+        return   # scan next time from begining
+    else:
+        for i in range(current_index, min(current_index + A, len(lines))):
+            print(lines[i])
+            ltop.append(lines[i])
+        print_next_lines.current_index = min(current_index + A, len(lines))
+        display_formatted_text(ltop,10,10,780,460)
+        Start_To_Scan = 0 # do not scan
+        return  # do not scan
 #----------------------------------------------------------------------------------------------
 #function for outputting text onto the screen
-def draw_text(text, font, text_col, x, y):
+def draw_text(text,x,y, text_col):
+    global font
     text_font = pygame.font.SysFont("Helvetica", 18)
     img = font.render(text, True, text_col)
     screen.blit(img, (x, y))
-
+#--------------------------------------------------------------------------------------------------
 # Function to display formatted text on the screen
-def display_formatted_text(text, x, y, width, height, font_size=18, line_spacing=1):
+def display_formatted_text(text, x, y, width, height, font_size=28, line_spacing=1):
     font = pygame.font.Font(None, font_size)
-    lines = text.split("\n")  # Split the text into lines based on newline characters
-
-    screen.fill(white)
-
+        
+    #lines = text.split("\n")  # Split the text into lines based on newline characters
+    lines = text
+    screen.fill(pygame.Color("black")) # erases the entire screen surface
     y_offset = y
     for line in lines:
-        text_surface = font.render(line, True, black)
+        if "Unknown" in line:
+            text_surface = font.render(line, True, red)
+        else:
+            text_surface = font.render(line, True, white)
         screen.blit(text_surface, (x, y_offset))
         y_offset += font_size + line_spacing
 
@@ -190,51 +254,14 @@ def display_formatted_text(text, x, y, width, height, font_size=18, line_spacing
 
 
 #-----------------------------------------------------------------------------------
-class button():
-        
-    #colours for button and text
-    button_col = (255, 0, 0)
-    hover_col = (75, 225, 255)
-    click_col = (50, 150, 255)
-    text_col = black
-    bwidth = 60 #180
-    bheight = 40 #70
-
-    def __init__(self, x, y, text):
-        self.x = x
-        self.y = y
-        self.text = text
-
-    def draw_button(self):
-        global clicked
-        action = False
-        #get mouse position
-        pos = pygame.mouse.get_pos()
-        #create pygame Rect object for the button
-        button_rect = Rect(self.x, self.y, self.bwidth, self.bheight)
-        #check mouseover and clicked conditions
-        if button_rect.collidepoint(pos):
-            if pygame.mouse.get_pressed()[0] == 1:
-                clicked = True
-                pygame.draw.rect(screen, self.click_col, button_rect)
-            elif pygame.mouse.get_pressed()[0] == 0 and clicked == True:
-                clicked = False
-                action = True
-            else:
-                pygame.draw.rect(screen, self.hover_col, button_rect)
-        else:
-            pygame.draw.rect(screen, self.button_col, button_rect)
-        #add shading to button
-        pygame.draw.line(screen, white, (self.x, self.y), (self.x + self.bwidth, self.y), 2)
-        pygame.draw.line(screen, white, (self.x, self.y), (self.x, self.y + self.bheight), 2)
-        pygame.draw.line(screen, black, (self.x, self.y + self.bheight), (self.x + self.bwidth, self.y + self.bheight), 2)
-        pygame.draw.line(screen, black, (self.x + self.bwidth, self.y), (self.x + self.bwidth, self.y + self.bheight), 2)
-        
-        font = pygame.font.Font(None,32)
-        text_img = font.render(self.text, True, self.text_col)
-        text_len = text_img.get_width()
-        screen.blit(text_img, (self.x + int(self.bwidth / 2) - int(text_len / 2), self.y + 15)) #25
-        return action
+def draw_buttons():
+    pygame.draw.rect(screen, red, exit_button)
+    pygame.draw.rect(screen, green, next_button)
+    font = pygame.font.Font(None, 28)
+    exit_text = font.render("Exit", True, white)
+    next_text = font.render("Next", True, white)
+    screen.blit(exit_text, (exit_label_X_pos, exit_label_Y_pos))
+    screen.blit(next_text, (next_label_X_pos, next_label_Y_pos))
 
 #------------------------------------------------------------------------------------
 # Function to fetch weather data from OpenWeatherMap API
@@ -259,14 +286,15 @@ def list_access_points():
 #------------------------------------------------------------
 # Define a function to draw the table
 def draw_table(cols, rows):
-    global cell_width, cell_height
     global screen_width , screen_height
-    
+    global cell_width, cell_height           # 7 19
+
     for row in range(rows):
         for col in range(cols):
-            pygame.draw.rect(screen, black, (table_x + col * cell_width, table_y + row * cell_height, cell_width, cell_height), 1)
+            pygame.draw.rect(screen, white, (table_x + col * cell_width, table_y + row * cell_height, cell_width, cell_height), 1)
             
 # Define a function to draw text in a specific cell
+#draw_text(text,x,y, text_col):
 def draw_text(text, col, row,color):
     global cell_width, cell_height
     global screen_width , screen_height
@@ -280,7 +308,7 @@ def draw_text(text, col, row,color):
     screen.blit(text_surface, text_rect)
 
 def Clear_Table(num_cols,num_rows):
-    screen.fill(pygame.Color("white")) # erases the entire screen surface
+    screen.fill(pygame.Color("black")) # erases the entire screen surface
     draw_table(num_cols, num_rows)
     # print table first line
     draw_text("CHA",  0, 0,orange)
@@ -351,112 +379,116 @@ def draw_signal_bars(cells,temperature, weather_description):
     screen.blit(temperature_text_surface, temperature_label_position)
     screen.blit(description_text_surface, description_label_position)
     
-# Function to draw the exit button
-def draw_exit_button():
-    global exit_label_X_pos, exit_label_Y_pos
-
-    font = pygame.font.Font(None, 36)
-    exit_label = "Exit"
-    exit_text_surface = font.render(exit_label, True, (255,0,0))
-    exit_label_position = (exit_label_X_pos, exit_label_Y_pos)
-    screen.blit(exit_text_surface, exit_label_position)
-    
-# Function to draw the exit button
-def draw_table_button():
-    global table_label_X_pos,table_label_Y_pos
-
-    font = pygame.font.Font(None, 36)
-    table_label = "Table"
-    table_text_surface = font.render(table_label, True, (255,0,0))
-    table_label_position = (table_label_X_pos,table_label_Y_pos)
-    screen.blit(table_text_surface, table_label_position)
-  
-
-def main():
-    global exit_label_X_pos, exit_label_Y_pos
-    global table_label_X_pos,table_label_Y_pos
-    global temperature,weather_description
-    global num_rows,num_cols
-    
-    pygame.display.set_caption("Wi-Fi Signal Strength Bars")
-    update_interval = 10  # Update the display every 10 seconds
-    last_update_time = 0
+ 
+#----------------------------------------------------
+def display_bars():
+    update_interval_bar = 10 # Update the display every 10 seconds
+    global last_update_time_bar
     cells = []  # Store the access points data
 
-    running = True
-    table = False
-    first_time_table = 1
-    OKto_search_net = False
-    Table_B = button(675, 1, 'Table')
-    Exit_B = button(735, 1, 'Exit')
-    Search_Net = button (675,45,'NET')
-    
-    while running:
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                running = False
-                
-        if Exit_B.draw_button():
-            running = False
-        if Table_B.draw_button():
-            table = not table # togale
-        if Search_Net.draw_button():
-            OKto_search_net=True
-            
-        if (table == True) and (first_time_table == 1):
+    current_time = time.time()
+    if (current_time - last_update_time_bar) >= update_interval_bar:
+        # Get the list of nearby access points
+        cells = list_access_points()
+        temperature, weather_description = get_weather()
+        last_update_time_bar = current_time
         # Draw the stored access points data
-            # Clear the screen
-            screen.fill(white)
-            # Draw the table
-            draw_table(num_cols,num_rows)
-            first_time_table = 0
-           
-        current_time = time.time()
-        if current_time - last_update_time >= update_interval:
-            # Get the list of nearby access points
-            cells = list_access_points()
-            temperature, weather_description = get_weather()
-            last_update_time = current_time
-            if table == False:
-                # Draw the stored access points data
+        if cells:
+        # Clear the screen
+            print("displae bars")
+            screen.fill(pygame.Color("black")) # erases the entire screen surface
+            draw_signal_bars(cells,temperature,weather_description)
+
+
+#---------------------------------------------------------------------------------
+def display_table():
+    update_interval_dis = 10  # Update the display every 10 seconds
+    global last_update_time_table
+    cells = []  # Store the access points data
+
+    current_time = time.time()
+    if current_time - last_update_time_table >= update_interval_dis:
+                cells = list_access_points()
+                last_update_time_table = current_time
                 if cells:
-                    # Clear the screen
-                    screen.fill(black)
-                    draw_signal_bars(cells,temperature,weather_description)
-            if table == True:
-                # Draw the stored access points data
-                if cells:
-                    Clear_Table(num_cols,num_rows)
+                    print("# Draw your table here")
+                    Clear_Table(num_cols, num_rows)
                     Count_Colon = 0
-                    Count_Row   = 1 # start from 2'd
-                    # Add text to specific cells
-                    # colon start from 0,1,2,3,
-                    # row start from 0,1,2
+                    Count_Row = 1  # start from 2'd
                     for cell in cells:
                         signal_strength = cell.signal
                         ssid = cell.ssid
                         channel = cell.channel
                         frequency = cell.frequency
                         signal_quality = cell.quality
-                        draw_text(str(channel), Count_Colon,Count_Row,black)  
-                        draw_text(str(frequency), Count_Colon+1,Count_Row,black)  
-                        draw_text(str(signal_strength), Count_Colon+2,Count_Row,black) 
-                        draw_text(str(signal_quality), Count_Colon+3,Count_Row,black) 
-                        draw_text(str(ssid), Count_Colon+4,Count_Row,black) 
-                        Count_Row   = Count_Row + 1
-                       
-            if (OKto_search_net==True):
-                search_net()
-                #OKto_search_net=False
-                #for event in pygame.event.get():
-                    #if event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
-                    # Check if the touch event occurred
-                        #touch_pos = pygame.mouse.get_pos()
+                        draw_text(str(channel), Count_Colon, Count_Row, white)
+                        draw_text(str(frequency), Count_Colon + 1, Count_Row, white)
+                        draw_text(str(signal_strength), Count_Colon + 2, Count_Row, white)
+                        draw_text(str(signal_quality), Count_Colon + 3, Count_Row, white)
+                        draw_text(str(ssid), Count_Colon + 4, Count_Row, white)
+                        Count_Row = Count_Row + 1
+#--------------------------------------------------------------------------------------
+def display_search_net():
 
-        #draw_frequency_buttons(frequency_band)
+    update_interval_net = 15  # Update the display every 10 seconds
+    global last_update_time_net
+
+    current_time = time.time()
+    if current_time - last_update_time_net >= update_interval_net:
+        search_net()
+        last_update_time_net = current_time 
+                
+                
+#------------------------------------------------------------------------------------------------
+
+def main():
+    state = 0
+    exit_clicked = False
+    next_clicked = False
+    running = True
+
+    while running:
+        for event in pygame.event.get():
+            if event.type == QUIT:
+                running = False
+            if event.type == MOUSEBUTTONDOWN:
+                if event.button == 1:
+                    if exit_button.collidepoint(event.pos):
+                        exit_clicked = True
+                    if next_button.collidepoint(event.pos):
+                        next_clicked = True
+
+        if exit_clicked:
+            running = False
+        elif next_clicked:
+            state += 1
+            next_clicked = False
+            screen.fill(pygame.Color("black")) # erases the entire screen surface
+            font = pygame.font.Font(None, 44)
+            text_surface = font.render("Scan_NET....", True, red)
+            screen.blit(text_surface, (320, 190))
+            pygame.display.update()
+            print("Erase Screen")
+            if (state > 2) :
+                state =0
+
+        if state == 0:
+            display_bars()
+            draw_buttons()
+        elif state == 1:
+            # Table mode
+            display_table()
+            draw_buttons()
+        elif state == 2:
+            # Search net mode
+            display_search_net()
+            draw_buttons()
+
         pygame.display.update()
 
     pygame.quit()
 
 if __name__ == "__main__":
     main()
+
+
