@@ -22,6 +22,7 @@
 # 0.1 - 24 sep 2023
 # 0.2 - read device name on the net- using search_net()
 # 0.3 27-10-2023
+# 0.4 add free memory
 
 import os
 from io import StringIO
@@ -374,11 +375,20 @@ def draw_signal_bars(cells,temperature, weather_description):
     temperature_text_surface = font.render(temperature_label, True, (255,200,0))
     description_text_surface = font.render(description_label, True, (255,200,0))
 
-    temperature_label_position = (screen_width - 175, screen_height - 390) # 450
-    description_label_position = (screen_width - 175, screen_height - 375) # 435
+    temperature_label_position = (screen_width - 175, screen_height - 410) # 450
+    description_label_position = (screen_width - 175, screen_height - 395) # 435
     screen.blit(temperature_text_surface, temperature_label_position)
     screen.blit(description_text_surface, description_label_position)
-    
+    # amount of free RAM
+    free_memory = get_free_memory()
+    freemem_label = f"Free mem={free_memory}"
+    freemem_text_surface = font.render(freemem_label, True, (255,200,0))
+    freemem_label_position = (screen_width - 175, screen_height - 380) 
+    screen.blit(freemem_text_surface, freemem_label_position)
+
+
+    #print(f"Free memory on Raspberry Pi: {free_memory} kB")
+
  
 #----------------------------------------------------
 def display_bars():
@@ -440,7 +450,14 @@ def display_search_net():
                 
                 
 #------------------------------------------------------------------------------------------------
+def get_free_memory():
+    with open('/proc/meminfo', 'r') as meminfo:
+        for line in meminfo:
+            if 'MemFree' in line:
+                free_memory = int(line.split()[1])
+                return free_memory
 
+#---------------------------------------------------------------------------------------
 def main():
     state = 0
     exit_clicked = False
