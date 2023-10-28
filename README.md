@@ -4,6 +4,6 @@
 1. Bar graph for wifi. with temprature , weather , and free memory<br />
 2. Table for wifi with Channel / freq/RSSI/quality/SSID.<br />
 3. Scan whole net with IP / MAC address / Name.<br />
--NEXT button advance netween the modes.<br />
+-NEXT button advance between the modes.<br />
 -Michanisani@gmail.com
 
