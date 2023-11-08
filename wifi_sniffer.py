@@ -269,9 +269,9 @@ def draw_buttons():
 def get_weather():
     global temperature,weather_description
     
-    city = 'Hod Hasharon'
+    city = ??
     country_code = 'IL'
-    API_KEY = 'a495a627e4daf53f77409213800bf92f'  # michanisani@gmail.com m559n233 API key
+    API_KEY = ???  #  API key
     base_url = f'http://api.openweathermap.org/data/2.5/weather?q={city},{country_code}&appid={API_KEY}&units=metric'
     response = requests.get(base_url)
     data = response.json()
