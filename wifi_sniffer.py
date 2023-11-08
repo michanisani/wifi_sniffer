@@ -16,13 +16,14 @@
 #aps = wifi.scan_networks('wlan0')
 #for bssid, cell in aps.items():
 #    print(cell.ssid, cell.bssid, cell.channel, cell.signal)
-# ssh 10.0.0.203 pw:m559n233
+
 
 # Versions
 # 0.1 - 24 sep 2023
 # 0.2 - read device name on the net- using search_net()
 # 0.3 27-10-2023
 # 0.4 add free memory
+# 0.5
 
 import os
 from io import StringIO
