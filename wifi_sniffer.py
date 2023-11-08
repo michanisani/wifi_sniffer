@@ -279,11 +279,51 @@ def get_weather():
     temperature = data['main']['temp']
     weather_description = data['weather'][0]['description']
     return temperature, weather_description
-
+#------------------------------------------------------------------------------------------------------------
+#Each cell object should have the following attributes:
+#• ssid
+#• signal
+#• quality
+#• frequency
+#• bitrates
+#• encrypted
+#• channel
+#• address
+#• mode
+#For cells that have encrypted as True, there will also be the following attributes:
+#• encryption_type
 # Function to scan and list nearby access points
+unique_combinations = set()
+unique_cells = []
+scan_counter = 0
 def list_access_points():
-     cells = wifi.Cell.all('wlan0')
-     return cells
+    global scan_counter,unique_cells,unique_combinations
+    
+    try:
+        cells = wifi.Cell.all('wlan0')
+    except:
+        SendData("WiFi list AP fail")
+        return []
+#    return cells # cell object
+
+    # Deduplicate the scan results based on SSID,freq,channel,address
+    # Initialize a set to store unique scan result combinations
+    # Create a set of unique scan result combinations
+    scan_counter += 1
+    if (scan_counter > 8):
+        unique_cells.clear()
+        unique_combinations.clear()
+        scan_counter = 0
+        
+    for cell in cells:
+        combination = (cell.ssid, cell.frequency, cell.channel, cell.address)
+        if combination not in unique_combinations:
+            unique_combinations.add(combination)
+            unique_cells.append(cell)
+    return unique_cells
+ 
+
+ 
 #------------------------------------------------------------
 # Define a function to draw the table
 def draw_table(cols, rows):
@@ -375,17 +415,18 @@ def draw_signal_bars(cells,temperature, weather_description):
     temperature_text_surface = font.render(temperature_label, True, (255,200,0))
     description_text_surface = font.render(description_label, True, (255,200,0))
 
-    temperature_label_position = (screen_width - 175, screen_height - 410) # 450
-    description_label_position = (screen_width - 175, screen_height - 395) # 435
+    temperature_label_position = (screen_width - 350, screen_height - 470) # 450
+    description_label_position = (screen_width - 600, screen_height - 470) # 435
     screen.blit(temperature_text_surface, temperature_label_position)
     screen.blit(description_text_surface, description_label_position)
     # amount of free RAM
+    '''
     free_memory = get_free_memory()
     freemem_label = f"Free mem={free_memory}"
     freemem_text_surface = font.render(freemem_label, True, (255,200,0))
-    freemem_label_position = (screen_width - 175, screen_height - 380) 
+    freemem_label_position = (screen_width - 175, screen_height - 400) 
     screen.blit(freemem_text_surface, freemem_label_position)
-
+    '''
 
     #print(f"Free memory on Raspberry Pi: {free_memory} kB")
 
